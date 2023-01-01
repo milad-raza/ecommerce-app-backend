@@ -2,9 +2,25 @@ const router = require("express").Router();
 const User = require("../models/User");
 const CryptoJS = require("crypto-js");
 const jwt = require("jsonwebtoken");
+const { userValidation } = require("../middlewares/validator");
 
 // REGISTER
 router.post("/register", async (req, res) => {
+  const error = userValidation(req.body);
+  if (error.error) {
+    return res
+      .status(400)
+      .send({ error: true, message: error.error.details[0].message });
+  }
+
+  const userNameExist = await User.findOne({ username: req.body.username });
+  const emailExist = await User.findOne({ email: req.body.email });
+  if (userNameExist || emailExist) {
+    return res
+      .status(400)
+      .send({ error: true, message: "User Already Exist." });
+  }
+
   const newUser = new User({
     username: req.body?.username,
     email: req.body?.email,
